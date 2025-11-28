@@ -20,7 +20,7 @@ MAPPING = digits + uppercase + lowercase
 # Define Test Indices
 IDX = 0
 
-class Trainer():
+class MLPModel():
 
     def __init__(self):
         self.training_images: np.array = None
@@ -65,7 +65,7 @@ class Trainer():
         self.test_images = np.array([t[0].flatten() for t in ds_test_list], dtype=np.float32) / 255.0 # normalize to value between 0 and 1
         self.test_labels = np.array([t[1] for t in ds_test_list]) 
         
-    def run_training(self):
+    def run_training(self, save_model=True):
         """
         Train Multilayer Perceptron on EMNIST Training Dataset
         """
@@ -85,14 +85,43 @@ class Trainer():
         )
 
         # Trainieren
-        self.model.fit(self.training_images, self.training_labels, epochs=10, batch_size=8)
+        self.model.fit(self.training_images, self.training_labels, epochs=15, batch_size=8)
 
-    def make_prediction(self):
+        if save_model:
+            os.makedirs("./models", exist_ok=True)
+            self.model.save("./models/model.keras")
+
+    def predict(self):
         """
-        Use trained model to predict outputs from emnist test dataset
+        Use trained model to predict outputs from emnist test dataset.
+        Tries to load model.keras from ./models or uses self.model as fallback, in case the model was just trained using this object.
         """
-        sample = self.test_images[IDX]
-        prediction = self.model.predict([sample]) # returns array with probobility for each class
+
+        try:
+            model = keras.models.load_model("./models/model.keras")
+        except FileNotFoundError:
+            if self.model:
+                model = self.model
+            else:
+                logging.info("No model available. Make sure to train a model before making predictions")
+                return
+
+
+        sample = self.test_images[IDX:IDX+1]  # Keep batch dimension: shape (1, 784)
+        prediction = model.predict(sample)  # returns array with probability for each class
         best_match_idx = np.argmax(prediction[0])
+
+        # Test Single Prediction
         print("Prediction: ", MAPPING[best_match_idx])
         print("Ground Truth: ", MAPPING[self.test_labels[IDX]])
+
+
+        # Calculate Total Accuracy
+        predictions = model.predict(self.test_images)
+        false_predictions = 0
+        for i, pred in enumerate(predictions):
+            best_match_idx = np.argmax(pred)
+            if MAPPING[best_match_idx] != MAPPING[self.test_labels[i]]:
+                false_predictions += 1
+
+        print("Accuracy: ", 1 - (false_predictions / len(predictions)))

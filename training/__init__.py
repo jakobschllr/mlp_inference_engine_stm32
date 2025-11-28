@@ -1,15 +1,19 @@
 import logging
-from training import Trainer
+from training.training import MLPModel
+from training.conversion import BinaryConverter
 
 # initialize logging
 logging.basicConfig(format='[%(message)s]')
 
 def main(*args):
-    trainer = Trainer()
-    trainer.load_emnist_dataset()
-    trainer.run_training()
-    trainer.make_prediction()
+    model = MLPModel()
+    converter = BinaryConverter()
 
+    model.load_emnist_dataset()
+    model.run_training()
+    model.predict()
+
+    converter.convert_to_binary()
 
 
 if __name__ == "__main__":
