@@ -6,7 +6,10 @@ logging.basicConfig(format='[%(message)s]')
 
 def main(*args):
     trainer = Trainer()
-    trainer.download_emnist_dataset()
+    trainer.load_emnist_dataset()
+    trainer.run_training()
+    trainer.make_prediction()
+
 
 
 if __name__ == "__main__":
